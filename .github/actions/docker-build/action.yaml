@@ -37,7 +37,7 @@ runs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
-        # main ブランチの時だけ、キャッシュを利用する
+        # main ブランチの時だけ、キャッシュを保存する
         cache-to: ${{ (github.ref_name == 'main' && 'type=gha,mode=max') || '' }}
         # Dockerfile 側にある ARG を上書きする
         build-args: |
