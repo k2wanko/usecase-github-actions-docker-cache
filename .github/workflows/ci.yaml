@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    name: Setup Docker Image for CI
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Docker Build
+        uses: ./.github/actions/docker-build
+        with:
+          cache-to: true
+  image-check:
+    name: Check Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: setup
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Docker Build with Load
+        id: docker-build
+        uses: ./.github/actions/docker-build
+        with:
+          load: true
+      - name: Check Docker Image
+        run: docker images ${{ steps.docker-build.outputs.image }}
+      - name: Inspect Docker Image
+        run: docker inspect ${{ steps.docker-build.outputs.image }}
+
+  test-and-lint:
+    name: Test and Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: setup
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Docker Build with Load
+        id: docker-build
+        uses: ./.github/actions/docker-build
+        with:
+          load: true
+      - name: npm test
+        run: |
+          docker run --rm -t \
+            -v ${{ github.workspace }}/lib:/app/lib \
+            ${{ steps.docker-build.outputs.image }} \
+            npm test    
+      - name: npm run lint
+        run: |
+          docker run --rm -t \
+            -v ${{ github.workspace }}/lib:/app/lib \
+            ${{ steps.docker-build.outputs.image }} \
+            npm run lint    
